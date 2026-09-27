@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Ultimate390 Generator</title>
+<style>
+body{background:#0a0a0a;color:#0f0;font:14px 'Courier New',monospace;padding:10px}
+.c{max-width:1000px;margin:auto;border:2px solid #0f0;padding:20px;background:#111;box-shadow:0 0 30px #0f0}
+h1{color:#0f0;text-shadow:0 0 20px #0f0;text-align:center;font-size:28px;letter-spacing:4px}
+input,select{width:100%;background:#1a1a1a;color:#0f0;border:1px solid #0f0;padding:6px;margin:3px 0}
+button{background:#0f0;color:#000;border:0;padding:10px 20px;font-weight:bold;cursor:pointer;margin:3px;transition:.2s}
+button:hover{background:#0c0;box-shadow:0 0 30px #0f0}
+.r{background:#0a0a0a;padding:10px;max-height:400px;overflow:auto;white-space:pre;font-size:12px;border:1px solid #0f0}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.col{flex:1;min-width:150px}
+</style>
+</head>
+<body>
+<div class="c">
+<h1>Ultimate390 Generator</h1>
+<div class="row">
+<div class="col"><input id="b" placeholder="Base word"></div>
+<div class="col"><input id="b2" placeholder="Additional word"></div>
+</div>
+<div class="row">
+<div class="col">
+<select id="y"><option value="1">Years (1950-2026)</option><option value="0">No</option></select>
+<select id="d"><option value="1">Digits (0-999)</option><option value="0">No</option></select>
+<select id="s"><option value="1">Special chars</option><option value="0">No</option></select>
+</div>
+<div class="col">
+<select id="c"><option value="1">Cases</option><option value="0">No</option></select>
+<select id="r"><option value="1">Reverse</option><option value="0">No</option></select>
+<select id="l"><option value="1">Leet</option><option value="0">No</option></select>
+</div>
+<div class="col">
+<select id="p"><option value="1">Prefixes/suffixes</option><option value="0">No</option></select>
+<select id="m"><option value="1">Mix with additional</option><option value="0">No</option></select>
+<input type="file" id="f" accept=".txt">
+</div>
+</div>
+<button id="g">Generate</button>
+<button id="dl">Download</button>
+<button id="cl">Clear</button>
+<h3>Combinations: <span id="cnt">0</span> | Dict: <span id="dcnt">0</span></h3>
+<div class="r" id="out"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id), out=$('out'), cnt=$('cnt'), dcnt=$('dcnt');
+let dict=[], res=[];
+
+function leet(s){
+ let m={'a':'4','e':'3','i':'1','o':'0','t':'7','s':'5','b':'8','g':'9','z':'2'};
+ let r='';
+ for(let c of s) r+=m[c.toLowerCase()]||c;
+ return r;
+}
+
+function v(b){
+ let r=new Set([b]);
+ if($('y').value=='1') for(let y=1950;y<=2026;y++){r.add(b+y);r.add(y+b);}
+ if($('d').value=='1') for(let i=0;i<1000;i++){r.add(b+i);r.add(i+b);}
+ if($('s').value=='1') for(let s of '!@#$%^&*()-_=+[]{}|;:,.<>?/~'){r.add(b+s);r.add(s+b);for(let i=0;i<100;i++){r.add(b+s+i);r.add(i+s+b);}}
+ if($('c').value=='1'){
+  let a=[...r];
+  for(let x of a){
+   r.add(x.toUpperCase());
+   if(x.length>1){r.add(x[0].toUpperCase()+x.slice(1).toLowerCase());r.add(x[0].toLowerCase()+x.slice(1).toUpperCase());}
+   if(x.length<=8){let t='';for(let i=0;i<x.length;i++)t+=i%2?x[i].toLowerCase():x[i].toUpperCase();r.add(t);}
+  }
+ }
+ if($('r').value=='1'){let a=[...r];for(let x of a)r.add(x.split('').reverse().join(''));}
+ if($('l').value=='1'){let a=[...r];for(let x of a)r.add(leet(x));}
+ if($('p').value=='1'){let a=[...r], p=['admin_','_admin','root_','_root','user_','_user','123_','_123'];for(let x of a)for(let pr of p){r.add(pr+x);r.add(x+pr);}}
+ return [...r];
+}
+
+$('f').onchange=function(e){
+ let file=e.target.files[0];
+ if(!file)return;
+ let reader=new FileReader();
+ reader.onload=function(ev){dict=ev.target.result.split(/\r?\n/).filter(l=>l.trim());dcnt.textContent=dict.length;alert('Loaded '+dict.length+' words');};
+ reader.readAsText(file);
+};
+
+$('g').onclick=function(){
+ let base=$('b').value.trim();
+ let base2=$('b2').value.trim();
+ if(!base){alert('Enter base word');return;}
+ let list=v(base);
+ if(base2) for(let w of v(base2)) list.push(w);
+ if(dict.length) for(let w of dict){list=list.concat(v(w));}
+ if($('m').value=='1' && base2){
+  let mix=[];
+  for(let a of list) for(let b of list) if(a!==b) mix.push(a+b);
+  list=list.concat(mix);
+ }
+ res=[...new Set(list)];
+ res.sort((a,b)=>a.length-b.length||a.localeCompare(b));
+ out.textContent=res.join('\n');
+ cnt.textContent=res.length;
+};
+
+$('dl').onclick=function(){
+ if(!res.length){alert('Generate first');return;}
+ let a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([res.join('\n')],{type:'text/plain'}));
+ a.download='ultimate390.txt';
+ a.click();
+};
+
+$('cl').onclick=function(){
+ res=[]; out.textContent=''; cnt.textContent='0';
+};
+
+window.onload=function(){$('g').click();};
+</script>
+</body>
+</html>
